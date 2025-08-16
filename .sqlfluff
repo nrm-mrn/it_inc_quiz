@@ -1,0 +1,10 @@
+[sqlfluff]
+dialect = postgres
+exclude_rules = L009, TL05, L010, L014, L057
+[sqlfluff:rules]
+allow_scalar = True
+tab_space_size = 2
+indent_unit = space
+quoted_identifiers_policy = all
+prefer_quoted_identifiers = True
+force_quote_identifier = True
