@@ -2,6 +2,8 @@ import { BaseDbEntity } from 'src/core/entities/baseDbEntity';
 import { Column, Entity } from 'typeorm';
 import { CreateQuestionDomainDto } from './dto/create-question-domain-dto';
 import { UpdateQuestionDomainDto } from './dto/update-question-domain-dto';
+import { DomainException } from 'src/core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 
 @Entity()
 export class Question extends BaseDbEntity {
@@ -29,12 +31,16 @@ export class Question extends BaseDbEntity {
     return question;
   }
 
-  publish() {
-    this.published = true;
-  }
-
-  unpublish() {
-    this.published = false;
+  setPublish(input: boolean) {
+    if (input === true) {
+      if (this.correctAnswers.answers.length === 0) {
+        throw new DomainException({
+          code: DomainExceptionCode.ValidationError,
+          message: 'Can not publish question with no answers',
+        });
+      }
+    }
+    this.published = input;
   }
 
   update(dto: UpdateQuestionDomainDto) {

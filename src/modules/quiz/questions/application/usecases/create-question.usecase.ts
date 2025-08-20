@@ -1,6 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { Question } from '../domain/question.schema';
 import { QuestionsRepository } from '../infrastructure/questions.repository';
+import { UUID } from 'crypto';
 
 export class CreateQuestionCommand {
   constructor(
@@ -11,13 +12,11 @@ export class CreateQuestionCommand {
 
 @CommandHandler(CreateQuestionCommand)
 export class CreateQuestionCommandHandler
-  implements ICommandHandler<CreateQuestionCommand, { questionId: string }>
+  implements ICommandHandler<CreateQuestionCommand, { questionId: UUID }>
 {
   constructor(private readonly questionsRepository: QuestionsRepository) {}
 
-  async execute(
-    command: CreateQuestionCommand,
-  ): Promise<{ questionId: string }> {
+  async execute(command: CreateQuestionCommand): Promise<{ questionId: UUID }> {
     const question = Question.create({
       body: command.body,
       answers: command.answers,
