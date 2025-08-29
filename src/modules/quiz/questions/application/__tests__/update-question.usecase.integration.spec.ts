@@ -1,9 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import {
-  CreateQuestionCommand,
-  CreateQuestionCommandHandler,
-} from '../create-question.usecase';
 import { QuestionsRepository } from '../../infrastructure/questions.repository';
 import { Question } from '../../domain/question.schema';
 import { configModule } from 'src/config-dynamic-module';
@@ -11,13 +7,17 @@ import { CoreConfig } from 'src/core/core.config';
 import { CoreModule } from 'src/core/core.module';
 import { TestingAPIService } from 'src/modules/testing/testingAPI.service';
 import { TestingApiModule } from 'src/modules/testing/testingAPI.module';
-import {
-  UpdateQuestionCommand,
-  UpdateQuestionCommandHandler,
-} from '../update-question.usecase';
 import { randomUUID, UUID } from 'crypto';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
+import {
+  CreateQuestionCommandHandler,
+  CreateQuestionCommand,
+} from '../usecases/create-question.usecase';
+import {
+  UpdateQuestionCommandHandler,
+  UpdateQuestionCommand,
+} from '../usecases/update-question.usecase';
 
 describe('UpdateQuestionCommandHandler Integration', () => {
   let app: TestingModule;

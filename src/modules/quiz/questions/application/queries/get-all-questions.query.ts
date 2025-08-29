@@ -7,7 +7,7 @@ import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
 import { QuestionViewDto } from '../../api/view-dto/question.view-dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from '../../domain/question.schema';
-import { ILike, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 export class GetAllQuestionsQuery {
   constructor(public input: GetQuestionsQueryParams) {}
@@ -26,27 +26,29 @@ export class GetAllQuestionsQueryHandler
   async execute(
     query: GetAllQuestionsQuery,
   ): Promise<PaginatedViewDto<QuestionViewDto[]>> {
-    const q = this.questionsRepository.createQueryBuilder();
+    const q = this.questionsRepository.createQueryBuilder('question');
 
-    q.select('*');
     if (query.input.publishedStatus !== PublishedStatusQuery.All) {
       switch (query.input.publishedStatus) {
         case PublishedStatusQuery.Published:
-          q.where('q.published == true');
+          q.where('question.published = true');
           break;
         case PublishedStatusQuery.NotPublished:
-          q.where('q.published == false');
+          q.where('question.published = false');
           break;
       }
       if (query.input.bodySearchTerm) {
-        q.andWhere({ body: ILike(`%${query.input.bodySearchTerm}%`) });
+        q.andWhere('question.body ILIKE :bodySearchTerm', {
+          bodySearchTerm: `%${query.input.bodySearchTerm}%`,
+        });
       }
-    }
-    if (query.input.bodySearchTerm) {
-      q.where({ body: ILike(`%${query.input.bodySearchTerm}%`) });
+    } else if (query.input.bodySearchTerm) {
+      q.where('question.body ILIKE :bodySearchTerm', {
+        bodySearchTerm: `%${query.input.bodySearchTerm}%`,
+      });
     }
 
-    q.orderBy(`"${query.input.sortBy}"`, query.input.sortDirection);
+    q.orderBy(`question.${query.input.sortBy}`, query.input.sortDirection);
     q.skip(query.input.calculateSkip());
     q.take(query.input.pageSize);
 

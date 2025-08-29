@@ -9,6 +9,7 @@ import { ThrottlerExceptionFilter } from './core/exceptions/filters/throttler-ex
 import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
 import { TestingApiModule } from './modules/testing/testingAPI.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { QuizModule } from './modules/quiz/quiz.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       inject: [CoreConfig],
     }),
     UserAccountsModule,
+    QuizModule,
   ],
   controllers: [],
   providers: [

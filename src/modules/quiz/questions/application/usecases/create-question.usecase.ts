@@ -1,7 +1,7 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Question } from '../domain/question.schema';
-import { QuestionsRepository } from '../infrastructure/questions.repository';
 import { UUID } from 'crypto';
+import { Question } from '../../domain/question.schema';
+import { QuestionsRepository } from '../../infrastructure/questions.repository';
 
 export class CreateQuestionCommand {
   constructor(

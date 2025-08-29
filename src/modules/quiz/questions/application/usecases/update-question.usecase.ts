@@ -1,6 +1,6 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { QuestionsRepository } from '../infrastructure/questions.repository';
 import { UUID } from 'crypto';
+import { QuestionsRepository } from '../../infrastructure/questions.repository';
 
 export class UpdateQuestionCommand {
   constructor(

@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { TestingModule, Test } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { QuestionsRepository } from '../../infrastructure/questions.repository';
-import { Question } from '../../domain/question.schema';
 import { configModule } from 'src/config-dynamic-module';
 import { CoreConfig } from 'src/core/core.config';
 import { CoreModule } from 'src/core/core.module';
-import { TestingAPIService } from 'src/modules/testing/testingAPI.service';
-import { TestingApiModule } from 'src/modules/testing/testingAPI.module';
 import {
   CreateQuestionCommandHandler,
   CreateQuestionCommand,
-} from '../usecases/create-question.usecase';
+} from 'src/modules/quiz/questions/application/usecases/create-question.usecase';
+import { Question } from 'src/modules/quiz/questions/domain/question.schema';
+import { QuestionsRepository } from 'src/modules/quiz/questions/infrastructure/questions.repository';
+import { TestingApiModule } from 'src/modules/testing/testingAPI.module';
+import { TestingAPIService } from 'src/modules/testing/testingAPI.service';
 
-describe('CreateQuestionCommandHandler Integration', () => {
+describe('Create or connect to game command handler test', () => {
   let app: TestingModule;
   let commandHandler: CreateQuestionCommandHandler;
   let questionsRepository: QuestionsRepository;
