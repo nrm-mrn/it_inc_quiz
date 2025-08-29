@@ -27,13 +27,13 @@ export class AnswerQuestionCommandHandler
   async execute(command: AnswerQuestionCommand): Promise<UUID> {
     const game = await this.gameRepository.getActiveGameForUser(command.userId);
     const player =
-      game.player_1.userId == command.userId
-        ? game.player_1
-        : (game.player_2 as Player);
+      game.player1.userId == command.userId
+        ? game.player1
+        : (game.player2 as Player);
     const otherPlayer =
-      game.player_1.userId == command.userId
-        ? (game.player_2 as Player)
-        : game.player_1;
+      game.player1.userId == command.userId
+        ? (game.player2 as Player)
+        : game.player1;
     const nextQuestionNumber = player.answers.length;
     if (nextQuestionNumber === 5) {
       throw new DomainException({

@@ -24,7 +24,7 @@ import { Duration } from 'luxon';
 import { DeviceAuthSession } from 'src/modules/user-accounts/domain/session.schema';
 import { UUID } from 'crypto';
 
-describe('Connect or Create Game Command Handler Integration Test', () => {
+describe('Answer question Command Handler Integration Test', () => {
   let app: TestingModule;
   let commandHandler: ConnectCommandHandler;
   let gameRepository: GameRepository;

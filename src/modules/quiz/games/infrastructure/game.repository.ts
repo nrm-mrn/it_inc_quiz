@@ -62,8 +62,8 @@ export class GameRepository {
   async getActiveGameForUser(id: UUID): Promise<Game> {
     const game = await this.gameRepository
       .createQueryBuilder('game')
-      .leftJoinAndSelect('game.player_1', 'player1')
-      .leftJoinAndSelect('game.player_2', 'player2')
+      .leftJoinAndSelect('game.player1', 'player1')
+      .leftJoinAndSelect('game.player2', 'player2')
       .leftJoinAndSelect('player1.answers', 'player1ans')
       .leftJoinAndSelect('player2.answers', 'player2ans')
       .leftJoinAndSelect('game.questions', 'questions')

@@ -8,7 +8,13 @@ export class TestingAPIService {
   async clearDb() {
     const q = this.dataSource.createQueryRunner();
     await q.query(/*sql*/ `
-      TRUNCATE TABLE users, question CASCADE
+      TRUNCATE TABLE users,
+      question,
+      game,
+      game_question,
+      player,
+      player_answer
+      CASCADE
       `);
   }
 }

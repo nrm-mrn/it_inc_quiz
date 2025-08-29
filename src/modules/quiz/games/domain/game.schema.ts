@@ -18,16 +18,18 @@ export class Game extends BaseDbEntity {
   status: GameStatus;
 
   @OneToOne(() => Player, (player) => player.game)
-  @JoinColumn()
-  player_1: Player;
+  @JoinColumn({ name: 'player1Id' })
+  player1: Player;
 
-  player_1Id: UUID;
+  @Column({ type: 'uuid', nullable: false })
+  player1Id: UUID;
 
   @OneToOne(() => Player, (player) => player.game)
-  @JoinColumn()
-  player_2: Player | null;
+  @JoinColumn({ name: 'player2Id' })
+  player2: Player | null;
 
-  player_2Id: UUID | null;
+  @Column({ type: 'uuid', nullable: true })
+  player2Id: UUID | null;
 
   @OneToMany(() => GameQuestion, (gameQuestion) => gameQuestion.game)
   questions: GameQuestion[];
@@ -35,13 +37,13 @@ export class Game extends BaseDbEntity {
   static Create(dto: CreateGameDomainDto): Game {
     const game = new this();
     game.status = GameStatus.Pending;
-    game.player_1Id = dto.firstPlayerId;
-    game.player_2Id = null;
+    game.player1Id = dto.firstPlayerId;
+    game.player2Id = null;
     return game;
   }
 
   connectSecondPlayer(dto: ConnectSecondPlayer) {
-    this.player_2Id = dto.secondPlayerId;
+    this.player2Id = dto.secondPlayerId;
   }
 
   attachQuestions(questions: GameQuestion[]) {

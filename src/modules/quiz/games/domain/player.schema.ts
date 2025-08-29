@@ -2,6 +2,7 @@ import { User } from 'src/modules/user-accounts/domain/user.schema';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   OneToOne,
@@ -19,8 +20,10 @@ export class Player extends BaseDbEntity {
   score: number;
 
   @ManyToOne(() => User)
+  @JoinColumn({ name: 'userId' })
   user: User;
 
+  @Column({ type: 'uuid', nullable: false })
   userId: UUID;
 
   @OneToOne(() => Game)

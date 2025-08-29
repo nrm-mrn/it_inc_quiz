@@ -18,10 +18,6 @@ export class ConnectCommandHandler implements ICommandHandler<ConnectCommand> {
   ) {}
 
   async execute(command: ConnectCommand): Promise<UUID> {
-    //create player
-    //get oldest pending game
-    //if found - add player to it and launch questions creation for the game
-    //if not found - create a pending game with empty second player
     const player = Player.Create({
       userId: command.userId,
     });
