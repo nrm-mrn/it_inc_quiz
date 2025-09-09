@@ -67,7 +67,8 @@ export class GamePairViewDto {
     view.id = dto.game.id;
     view.firstPlayerProgress = dto.firstPlayerProgress;
     view.secondPlayerProgress = dto.secondPlayerProgress;
-    view.questions = dto.game.questions;
+    view.questions =
+      dto.game.questions.length === 0 ? null : dto.game.questions;
     switch (dto.game.status) {
       case GameStatus.Pending:
         view.status = GameStatuses.PENDING;

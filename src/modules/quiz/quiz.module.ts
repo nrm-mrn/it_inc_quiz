@@ -15,6 +15,7 @@ import { PlayerAnswer } from './games/domain/answer.schema';
 import { Game } from './games/domain/game.schema';
 import { GameQuestion } from './games/domain/gameQuestions.schema';
 import { Player } from './games/domain/player.schema';
+import { GetCurrentGameForUserQueryHandler } from './games/application/queries/get-current-game-for-user.query';
 
 const usecases = [
   CreateQuestionCommandHandler,
@@ -27,6 +28,7 @@ const queries = [
   GetQuestionQueryHandler,
   GetAllQuestionsQueryHandler,
   GetGameQueryHandler,
+  GetCurrentGameForUserQueryHandler,
 ];
 
 @Module({

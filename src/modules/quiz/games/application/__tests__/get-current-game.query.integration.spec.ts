@@ -38,8 +38,9 @@ import {
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 import { UUID } from 'crypto';
+import { GetCurrentGameForUserQueryHandler } from '../queries/get-current-game-for-user.query';
 
-describe('Get Game Pair Query Handler Integration Test', () => {
+describe('Get Current Game Pair For User Query Handler Integration Test', () => {
   let app: TestingModule;
   let answerCommandHandler: AnswerQuestionCommandHandler;
   let connectCommandHandler: ConnectCommandHandler;
@@ -47,7 +48,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
   let questionsRepository: QuestionsRepository;
   let usersRepository: UsersRepository;
   let testingApiService: TestingAPIService;
-  let getGameQueryHandler: GetGameQueryHandler;
+  let getCurrentGameQueryHandler: GetCurrentGameForUserQueryHandler;
 
   beforeAll(async () => {
     app = await Test.createTestingModule({
@@ -84,7 +85,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
       providers: [
         AnswerQuestionCommandHandler,
         ConnectCommandHandler,
-        GetGameQueryHandler,
+        GetCurrentGameForUserQueryHandler,
         GameRepository,
         QuestionsRepository,
         UsersRepository,
@@ -102,7 +103,9 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     questionsRepository = app.get<QuestionsRepository>(QuestionsRepository);
     usersRepository = app.get<UsersRepository>(UsersRepository);
     testingApiService = app.get<TestingAPIService>(TestingAPIService);
-    getGameQueryHandler = app.get<GetGameQueryHandler>(GetGameQueryHandler);
+    getCurrentGameQueryHandler = app.get<GetCurrentGameForUserQueryHandler>(
+      GetCurrentGameForUserQueryHandler,
+    );
   });
 
   afterAll(async () => {
@@ -271,100 +274,8 @@ describe('Get Game Pair Query Handler Integration Test', () => {
   }
 
   describe('execute', () => {
-    it('should return correct pending game pair', async () => {
-      const { gameId, user1 } = await createPendingGame();
-
-      const result = await getGameQueryHandler.execute(
-        new GetGameQuery(gameId, user1.id),
-      );
-      console.log(result);
-
-      validateGamePairViewDto(result);
-      expect(result.status).toBe(GameStatuses.PENDING);
-      expect(result.secondPlayerProgress).toBeNull();
-      expect(result.questions).toBeNull();
-      expect(result.startGameDate).toBeNull();
-      expect(result.finishGameDate).toBeNull();
-      expect(result.firstPlayerProgress.answers).toHaveLength(0);
-      expect(result.firstPlayerProgress.score).toBe(0);
-      expect(result.firstPlayerProgress.player.login).toBe('player1');
-    });
-
-    it('should return correct active game pair', async () => {
-      const { gameId, user1, user2 } = await createActiveGame();
-
-      const result = await getGameQueryHandler.execute(
-        new GetGameQuery(gameId, user1.id),
-      );
-
-      validateGamePairViewDto(result);
-      expect(result.status).toBe(GameStatuses.ACTIVE);
-      expect(result.secondPlayerProgress).not.toBeNull();
-      expect(result.questions).not.toBeNull();
-      expect(result.questions).toHaveLength(5); // We created 5 questions
-      expect(result.startGameDate).not.toBeNull();
-      expect(result.finishGameDate).toBeNull();
-      expect(result.firstPlayerProgress.player.login).toBe('player1');
-      expect(result.secondPlayerProgress!.player.login).toBe('player2');
-      expect(result.firstPlayerProgress.answers).toHaveLength(0);
-      expect(result.secondPlayerProgress!.answers).toHaveLength(0);
-      expect(result.firstPlayerProgress.score).toBe(0);
-      expect(result.secondPlayerProgress!.score).toBe(0);
-    });
-
-    it('should return correct finished game pair', async () => {
-      const { gameId, user1, user2 } = await createFinishedGame();
-
-      const result = await getGameQueryHandler.execute(
-        new GetGameQuery(gameId, user1.id),
-      );
-
-      validateGamePairViewDto(result);
-      expect(result.status).toBe(GameStatuses.FINISHED);
-      expect(result.secondPlayerProgress).not.toBeNull();
-      expect(result.questions).not.toBeNull();
-      expect(result.questions).toHaveLength(5);
-      expect(result.startGameDate).not.toBeNull();
-      expect(result.finishGameDate).not.toBeNull();
-      expect(result.firstPlayerProgress.player.login).toBe('player1');
-      expect(result.secondPlayerProgress!.player.login).toBe('player2');
-      expect(result.firstPlayerProgress.answers.length).toBeGreaterThan(0);
-      expect(result.secondPlayerProgress!.answers.length).toBeGreaterThan(0);
-    });
-
-    it('should 404 when game id does not exist', async () => {
-      const user1 = await createTestUser('player1', 'player1@example.com');
-      const nonExistentGameId = '550e8400-e29b-41d4-a716-446655440000' as UUID;
-
-      await expect(
-        getGameQueryHandler.execute(
-          new GetGameQuery(nonExistentGameId, user1.id),
-        ),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          code: DomainExceptionCode.NotFound,
-          message: 'Game with provided id does not exist',
-        }),
-      );
-    });
-
-    it('should 403 when user is not game participant', async () => {
-      const { gameId } = await createPendingGame();
-      const nonParticipantUser = await createTestUser(
-        'nonparticipant',
-        'nonparticipant@example.com',
-      );
-
-      await expect(
-        getGameQueryHandler.execute(
-          new GetGameQuery(gameId, nonParticipantUser.id),
-        ),
-      ).rejects.toThrow(
-        expect.objectContaining({
-          code: DomainExceptionCode.Forbidden,
-          message: 'User is not a participant in the provided game',
-        }),
-      );
-    });
+    it('should return pending game', async () => {});
+    it('should return active game', async () => {});
+    it('should not return finished game', async () => {});
   });
 });

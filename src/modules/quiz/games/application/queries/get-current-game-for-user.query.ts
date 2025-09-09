@@ -6,40 +6,21 @@ import {
   GameWithQuestionsModel,
 } from '../../api/view-dto/game-pair.view-dto';
 import { DataSource } from 'typeorm';
-import { Game } from '../../domain/game.schema';
+import { Game, GameStatus } from '../../domain/game.schema';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 
-export class GetGameQuery {
-  constructor(
-    public gameId: UUID,
-    public userId: UUID,
-  ) {}
+export class GetCurrentGameForUser {
+  constructor(public userId: UUID) {}
 }
 
-@QueryHandler(GetGameQuery)
-export class GetGameQueryHandler
-  implements IQueryHandler<GetGameQuery, GamePairViewDto>
+@QueryHandler(GetCurrentGameForUser)
+export class GetCurrentGameForUserQueryHandler
+  implements IQueryHandler<GetCurrentGameForUser, GamePairViewDto>
 {
   constructor(private readonly dataSource: DataSource) {}
 
-  async execute(query: GetGameQuery): Promise<GamePairViewDto> {
-    const game = await this.dataSource.query<Game[]>(
-      /*sql*/ `
-      SELECT * FROM game
-      WHERE game.id = $1
-    `,
-      [query.gameId],
-    );
-
-    //404 if game not found
-    if (game.length !== 1) {
-      throw new DomainException({
-        code: DomainExceptionCode.NotFound,
-        message: 'Game with provided id does not exist',
-      });
-    }
-
+  async execute(query: GetCurrentGameForUser): Promise<GamePairViewDto> {
     const gameWithQuestionsRow = await this.dataSource.query<
       GameWithQuestionsModel[]
     >(
@@ -67,12 +48,13 @@ export class GetGameQueryHandler
       LEFT JOIN player AS p2 ON g."player2Id" = p2.id
       LEFT JOIN game_question AS gq ON g.id = gq."gameId"
       LEFT JOIN question AS q ON gq."questionId" = q.id
-      WHERE g.id = $1 AND (p1."userId" = $2 OR p2."userId" = $2)
+      WHERE
+        (g.status = $1 OR g.status = $2) AND (p1."userId" = $3 OR p2."userId" = $3)
       GROUP BY
         g.id, g."player1Id", g."player2Id", g.status,
         g."startedAt", g."createdAt", g."finishedAt", g."deletedAt"
     `,
-      [game[0].id, query.userId],
+      [GameStatus.Pending, GameStatus.Active, query.userId],
     );
 
     //403 if userId is not participant in the provided gameId
