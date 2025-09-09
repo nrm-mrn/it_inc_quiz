@@ -10,6 +10,11 @@ import { GetAllQuestionsQueryHandler } from './questions/application/queries/get
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Question } from './questions/domain/question.schema';
 import { QuestionsRepository } from './questions/infrastructure/questions.repository';
+import { GetGameQueryHandler } from './games/application/queries/get-game-pair-by-id.query';
+import { PlayerAnswer } from './games/domain/answer.schema';
+import { Game } from './games/domain/game.schema';
+import { GameQuestion } from './games/domain/gameQuestions.schema';
+import { Player } from './games/domain/player.schema';
 
 const usecases = [
   CreateQuestionCommandHandler,
@@ -18,10 +23,23 @@ const usecases = [
   SetPublishQuestionCommandHandler,
 ];
 
-const queries = [GetQuestionQueryHandler, GetAllQuestionsQueryHandler];
+const queries = [
+  GetQuestionQueryHandler,
+  GetAllQuestionsQueryHandler,
+  GetGameQueryHandler,
+];
 
 @Module({
-  imports: [UserAccountsModule, TypeOrmModule.forFeature([Question])],
+  imports: [
+    UserAccountsModule,
+    TypeOrmModule.forFeature([
+      Question,
+      PlayerAnswer,
+      Game,
+      GameQuestion,
+      Player,
+    ]),
+  ],
   controllers: [QuestionsController],
   providers: [...usecases, ...queries, QuestionsRepository],
 })

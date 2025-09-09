@@ -1,6 +1,11 @@
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { UUID } from 'crypto';
 import { QuestionsRepository } from '../../infrastructure/questions.repository';
+import {
+  DomainException,
+  Extension,
+} from 'src/core/exceptions/domain-exceptions';
+import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 
 export class UpdateQuestionCommand {
   constructor(
@@ -20,6 +25,15 @@ export class UpdateQuestionCommandHandler
     const question = await this.questionsRepository.getQuestionByIdOrFail(
       command.id,
     );
+    if (command.answers.length === 0 && question.published) {
+      throw new DomainException({
+        code: DomainExceptionCode.BadRequest,
+        message: 'Published question should have at least one answer',
+        extensions: [
+          new Extension('Answer should not be empty', 'correctAnswers'),
+        ],
+      });
+    }
     question.update({
       body: command.body,
       answers: command.answers,

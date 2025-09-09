@@ -34,6 +34,12 @@ export class Game extends BaseDbEntity {
   @OneToMany(() => GameQuestion, (gameQuestion) => gameQuestion.game)
   questions: GameQuestion[];
 
+  @Column({ type: 'timestamptz', nullable: true })
+  startedAt: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  finishedAt: Date;
+
   static Create(dto: CreateGameDomainDto): Game {
     const game = new this();
     game.status = GameStatus.Pending;
@@ -52,5 +58,11 @@ export class Game extends BaseDbEntity {
 
   startGame() {
     this.status = GameStatus.Active;
+    this.startedAt = new Date();
+  }
+
+  finishGame() {
+    this.status = GameStatus.Finished;
+    this.finishedAt = new Date();
   }
 }

@@ -38,4 +38,8 @@ export class Player extends BaseDbEntity {
     player.userId = dto.userId;
     return player;
   }
+
+  addAnswer(answer: PlayerAnswer) {
+    this.answers.push(answer);
+  }
 }

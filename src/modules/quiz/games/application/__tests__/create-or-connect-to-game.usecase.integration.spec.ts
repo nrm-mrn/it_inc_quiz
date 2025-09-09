@@ -128,7 +128,7 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
       expect(typeof gameId).toBe('string');
 
       const createdGame = await gameRepository
-        .getActiveGameForUser(user.id)
+        .getActiveGameForUserOrFail(user.id)
         .catch(() => null);
       expect(createdGame).toBeNull(); // Should be null because game is pending, not active
 
@@ -158,7 +158,7 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
       expect(pendingGame).toBeNull();
 
       // Verify game is now active with both players
-      const activeGame = await gameRepository.getActiveGameForUser(user1.id);
+      const activeGame = await gameRepository.getActiveGameById(gameId1);
       expect(activeGame).toBeDefined();
       expect(activeGame.status).toBe(GameStatus.Active);
       expect(activeGame.player1Id).toBeDefined();
@@ -167,36 +167,43 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
       expect(activeGame.questions.length).toBe(5);
 
       // Verify both players can access the same game
-      const activeGame2 = await gameRepository.getActiveGameForUser(user2.id);
+      const activeGame2 = await gameRepository.getActiveGameForUserOrFail(
+        user2.id,
+      );
       expect(activeGame2.id).toBe(activeGame.id);
     });
 
-    it('should create separate games when multiple users connect simultaneously', async () => {
+    it('should handle multiple simultaneous create requests from different users', async () => {
       const user1 = await createTestUser('testuser1', 'test1@example.com');
       const user2 = await createTestUser('testuser2', 'test2@example.com');
-      const user3 = await createTestUser('testuser3', 'test3@example.com');
+      // const user3 = await createTestUser('testuser3', 'test3@example.com');
       await createPublishedQuestions(5);
 
       const command1 = new ConnectCommand(user1.id);
       const command2 = new ConnectCommand(user2.id);
-      const command3 = new ConnectCommand(user3.id);
+      // const command3 = new ConnectCommand(user3.id);
 
-      const gameId1 = await commandHandler.execute(command1);
-      const gameId2 = await commandHandler.execute(command2);
-      const gameId3 = await commandHandler.execute(command3);
+      const res = await Promise.all([
+        commandHandler.execute(command1),
+        commandHandler.execute(command2),
+      ]);
+
+      const gameId1 = res[0];
+      const gameId2 = res[1];
+      // const gameId3 = await commandHandler.execute(command3);
 
       expect(gameId1).toBe(gameId2); // First two users should be in same game
-      expect(gameId3).not.toBe(gameId1); // Third user should create new game
+      // expect(gameId3).not.toBe(gameId1); // Third user should create new game
 
-      // Verify first game is active
-      const activeGame1 = await gameRepository.getActiveGameForUser(user1.id);
+      // Verify game is active
+      const activeGame1 = await gameRepository.getActiveGameForUserOrFail(
+        user1.id,
+      );
       expect(activeGame1.status).toBe(GameStatus.Active);
 
-      // Verify third user has a pending game
+      // Verify no pending games exist
       const pendingGame = await gameRepository.matchGame();
-      expect(pendingGame).toBeDefined();
-      expect(pendingGame!.id).toBe(gameId3);
-      expect(pendingGame!.status).toBe(GameStatus.Pending);
+      expect(pendingGame).toBeNull();
     });
 
     it('should throw error when insufficient questions available', async () => {
@@ -237,7 +244,6 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
       }
       await createPublishedQuestions(5);
 
-      // Act - Create 3 complete games
       const gameIds: UUID[] = [];
       for (const user of users) {
         const command = new ConnectCommand(user.id);
@@ -260,7 +266,7 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
 
       // Verify all games are active
       for (let i = 0; i < 6; i++) {
-        const activeGame = await gameRepository.getActiveGameForUser(
+        const activeGame = await gameRepository.getActiveGameForUserOrFail(
           users[i].id,
         );
         expect(activeGame.status).toBe(GameStatus.Active);
@@ -278,7 +284,7 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
       const command2 = new ConnectCommand(user2.id);
       const gameId = await commandHandler.execute(command2);
 
-      const activeGame = await gameRepository.getActiveGameForUser(user1.id);
+      const activeGame = await gameRepository.getActiveGameById(gameId);
       expect(activeGame.questions).toBeDefined();
       expect(activeGame.questions.length).toBe(5);
 

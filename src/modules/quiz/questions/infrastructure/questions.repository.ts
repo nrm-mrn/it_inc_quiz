@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Question } from '../domain/question.schema';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { UUID } from 'crypto';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
@@ -12,6 +12,10 @@ export class QuestionsRepository {
     @InjectRepository(Question)
     private readonly questionsRepository: Repository<Question>,
   ) {}
+
+  private getQuestionsRepo(manager?: EntityManager) {
+    return manager ? manager.getRepository(Question) : this.questionsRepository;
+  }
 
   async saveQuestion(question: Question): Promise<{ id: UUID }> {
     const id = await this.questionsRepository
@@ -24,8 +28,11 @@ export class QuestionsRepository {
     return this.questionsRepository.findOneBy({ id });
   }
 
-  async getQuestionByIdOrFail(id: UUID): Promise<Question> {
-    const question = await this.questionsRepository.findOneBy({ id });
+  async getQuestionByIdOrFail(
+    id: UUID,
+    manager?: EntityManager,
+  ): Promise<Question> {
+    const question = await this.getQuestionsRepo(manager).findOneBy({ id });
     if (!question) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,
