@@ -158,7 +158,6 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     const gameId = await connectCommandHandler.execute(
       new ConnectCommand(user1.id),
     );
-    console.log(user1);
 
     return { gameId, user1 };
   }

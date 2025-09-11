@@ -4,6 +4,7 @@ import { Player } from './player.schema';
 import { randomUUID, UUID } from 'crypto';
 import { Question } from '../../questions/domain/question.schema';
 import { CreatePlayerAnswerDomainDto } from './dto/create-player-answer-domain-dto';
+import { DateTime } from 'luxon';
 
 @Entity()
 export class PlayerAnswer extends BaseDbEntity {
@@ -30,6 +31,8 @@ export class PlayerAnswer extends BaseDbEntity {
     answer.playerId = dto.playerId;
     answer.questionId = dto.questionId;
     answer.status = dto.status;
+    answer.createdAt = DateTime.now().toUTC().toJSDate();
+    answer.updatedAt = DateTime.now().toUTC().toJSDate();
     return answer;
   }
 }

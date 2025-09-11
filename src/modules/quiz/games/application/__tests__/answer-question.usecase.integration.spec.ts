@@ -300,6 +300,11 @@ describe('Answer Question Command Handler Integration Test', () => {
 
       // Game should no longer be active, so this should fail
       expect(finishedGame).toBeNull();
+
+      const isUser1InPair = await gameRepository.checkIfUserInPair(user1.id);
+      const isUser2InPair = await gameRepository.checkIfUserInPair(user2.id);
+      expect(isUser1InPair).toBe(false);
+      expect(isUser2InPair).toBe(false);
     });
 
     it('should give bonus point to player who finishes first with at least one correct answer', async () => {

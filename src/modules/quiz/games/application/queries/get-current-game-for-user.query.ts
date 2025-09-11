@@ -113,7 +113,10 @@ export class GetCurrentGameForUserQueryHandler
                     WHEN pa.status = true THEN 'Correct'
                     ELSE 'Incorrect'
                   END,
-                  'addedAt', pa."createdAt"
+                  'addedAt',
+                  to_char(
+                    pa."createdAt" AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'
+                  )
                 )
               ) FILTER (WHERE pa.id IS NOT null), '[]'::json
             ),

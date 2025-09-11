@@ -296,7 +296,7 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
       expect(result.pairCreatedDate).toBeDefined();
     });
 
-    it.only('should return active game', async () => {
+    it('should return active game', async () => {
       // Arrange
       const { gameId, user1, user2 } = await createActiveGame();
 
