@@ -58,7 +58,7 @@ export class GetGameQueryHandler
             json_build_object(
               'id', gq."questionId",
               'body', q.body
-            )
+            ) ORDER BY gq.order ASC
           ) FILTER (WHERE gq."questionId" IS NOT NULL),
           '[]'::json
         ) as questions

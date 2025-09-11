@@ -39,7 +39,7 @@ export class GetCurrentGameForUserQueryHandler
             json_build_object(
               'id', gq."questionId",
               'body', q.body
-            )
+            ) ORDER BY gq.order ASC
           ) FILTER (WHERE gq."questionId" IS NOT NULL),
           '[]'::json
         ) as questions
@@ -53,7 +53,7 @@ export class GetCurrentGameForUserQueryHandler
       GROUP BY
         g.id, g."player1Id", g."player2Id", g.status,
         g."startedAt", g."createdAt", g."finishedAt", g."deletedAt"
-    `,
+`,
       [GameStatus.Pending, GameStatus.Active, query.userId],
     );
 
