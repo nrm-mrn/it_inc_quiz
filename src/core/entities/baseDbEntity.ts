@@ -15,8 +15,8 @@ export class BaseDbEntity {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @UpdateDateColumn({ nullable: true, default: null })
+  updatedAt: Date | null;
 
   @DeleteDateColumn()
   deletedAt: Date | null;

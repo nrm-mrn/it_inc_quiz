@@ -6,8 +6,7 @@ export class TestingAPIService {
   constructor(private readonly dataSource: DataSource) {}
 
   async clearDb() {
-    const q = this.dataSource.createQueryRunner();
-    await q.query(/*sql*/ `
+    await this.dataSource.query(/*sql*/ `
       TRUNCATE TABLE users,
       question,
       game,

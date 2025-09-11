@@ -6,7 +6,7 @@ export class QuestionViewDto {
   correctAnswers: string[];
   published: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 
   static mapToView(dto: Question): QuestionViewDto {
     return {
@@ -15,7 +15,7 @@ export class QuestionViewDto {
       correctAnswers: dto.correctAnswers.answers,
       published: dto.published,
       createdAt: dto.createdAt.toISOString(),
-      updatedAt: dto.updatedAt.toISOString(),
+      updatedAt: dto.updatedAt ? dto.updatedAt.toISOString() : null,
     };
   }
 }

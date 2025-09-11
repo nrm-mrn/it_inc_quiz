@@ -15,7 +15,7 @@ import {
 } from '../usecases/connect-or-create-game.usecase';
 import { GameRepository } from '../../infrastructure/game.repository';
 import { QuestionsRepository } from 'src/modules/quiz/questions/infrastructure/questions.repository';
-import { Game, GameStatus } from '../../domain/game.schema';
+import { Game } from '../../domain/game.schema';
 import { Player } from '../../domain/player.schema';
 import { PlayerAnswer } from '../../domain/answer.schema';
 import { GameQuestion } from '../../domain/gameQuestions.schema';
@@ -33,11 +33,10 @@ import {
 import {
   GamePairViewDto,
   GameStatuses,
-  AnswerStatuses,
 } from '../../api/view-dto/game-pair.view-dto';
-import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 import { UUID } from 'crypto';
+import { AnswerStatuses } from '../../api/view-dto/answer.view-dto';
 
 describe('Get Game Pair Query Handler Integration Test', () => {
   let app: TestingModule;
@@ -195,14 +194,14 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     const questions = game.questions;
 
     // Player 1 answers all questions correctly
-    for (const question of questions) {
+    for (const n of questions) {
       await answerCommandHandler.execute(
         new AnswerQuestionCommand(user1.id, '4'), // Assuming correct answer
       );
     }
 
     // Player 2 answers all questions incorrectly
-    for (const question of questions) {
+    for (const n of questions) {
       await answerCommandHandler.execute(
         new AnswerQuestionCommand(user2.id, 'wrong answer'),
       );
@@ -277,7 +276,6 @@ describe('Get Game Pair Query Handler Integration Test', () => {
       const result = await getGameQueryHandler.execute(
         new GetGameQuery(gameId, user1.id),
       );
-      console.log(result);
 
       validateGamePairViewDto(result);
       expect(result.status).toBe(GameStatuses.PENDING);
@@ -291,7 +289,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     });
 
     it('should return correct active game pair', async () => {
-      const { gameId, user1, user2 } = await createActiveGame();
+      const { gameId, user1 } = await createActiveGame();
 
       const result = await getGameQueryHandler.execute(
         new GetGameQuery(gameId, user1.id),
@@ -313,7 +311,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     });
 
     it('should return correct finished game pair', async () => {
-      const { gameId, user1, user2 } = await createFinishedGame();
+      const { gameId, user1 } = await createFinishedGame();
 
       const result = await getGameQueryHandler.execute(
         new GetGameQuery(gameId, user1.id),

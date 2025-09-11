@@ -48,7 +48,8 @@ export class QuestionsRepository {
 
   async getRandomQuestionsForGame(): Promise<UUID[]> {
     const questions = await this.questionsRepository
-      .createQueryBuilder()
+      .createQueryBuilder('q')
+      .where(`q.published = :published`, { published: true })
       .orderBy('RANDOM()')
       .take(5)
       .getMany();

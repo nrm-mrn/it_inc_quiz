@@ -161,8 +161,6 @@ export class GetGameQueryHandler
       secondPlayerProgress: secondPlayerProgress,
     });
 
-    console.log(firstPlayerProgress.answers);
-
     return gamePairView;
   }
 }

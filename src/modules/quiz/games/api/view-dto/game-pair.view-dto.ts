@@ -1,12 +1,8 @@
 import { UUID } from 'crypto';
-import { Game, GameStatus } from '../../domain/game.schema';
+import { GameStatus } from '../../domain/game.schema';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
-
-export enum AnswerStatuses {
-  CORRECT = 'Correct',
-  INCORRECT = 'Incorrect',
-}
+import { AnswerViewDto } from './answer.view-dto';
 
 export enum GameStatuses {
   PENDING = 'PendingSecondPlayer',
@@ -14,14 +10,8 @@ export enum GameStatuses {
   FINISHED = 'Finished',
 }
 
-export class AnswerViewModel {
-  questionId: UUID;
-  answerStatus: AnswerStatuses;
-  addedAt: string;
-}
-
 export class GamePlayerProgressViewModel {
-  answers: AnswerViewModel[];
+  answers: AnswerViewDto[];
   player: PlayerViewModel;
   score: number;
 }

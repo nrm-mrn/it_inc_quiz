@@ -15,7 +15,7 @@ import {
 } from '../usecases/connect-or-create-game.usecase';
 import { GameRepository } from '../../infrastructure/game.repository';
 import { QuestionsRepository } from 'src/modules/quiz/questions/infrastructure/questions.repository';
-import { Game, GameStatus } from '../../domain/game.schema';
+import { Game } from '../../domain/game.schema';
 import { Player } from '../../domain/player.schema';
 import { PlayerAnswer } from '../../domain/answer.schema';
 import { GameQuestion } from '../../domain/gameQuestions.schema';
@@ -27,18 +27,17 @@ import { PasswordRecovery } from 'src/modules/user-accounts/domain/passwordRecov
 import { Duration } from 'luxon';
 import { DeviceAuthSession } from 'src/modules/user-accounts/domain/session.schema';
 import {
-  GetGameQuery,
-  GetGameQueryHandler,
-} from '../queries/get-game-pair-by-id.query';
-import {
   GamePairViewDto,
   GameStatuses,
-  AnswerStatuses,
 } from '../../api/view-dto/game-pair.view-dto';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 import { UUID } from 'crypto';
-import { GetCurrentGameForUserQueryHandler } from '../queries/get-current-game-for-user.query';
+import {
+  GetCurrentGameForUserQueryHandler,
+  GetCurrentGameForUser,
+} from '../queries/get-current-game-for-user.query';
+import { AnswerStatuses } from '../../api/view-dto/answer.view-dto';
 
 describe('Get Current Game Pair For User Query Handler Integration Test', () => {
   let app: TestingModule;
@@ -198,14 +197,14 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
     const questions = game.questions;
 
     // Player 1 answers all questions correctly
-    for (const question of questions) {
+    for (const n of questions) {
       await answerCommandHandler.execute(
         new AnswerQuestionCommand(user1.id, '4'), // Assuming correct answer
       );
     }
 
     // Player 2 answers all questions incorrectly
-    for (const question of questions) {
+    for (const n of questions) {
       await answerCommandHandler.execute(
         new AnswerQuestionCommand(user2.id, 'wrong answer'),
       );
@@ -274,8 +273,136 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
   }
 
   describe('execute', () => {
-    it('should return pending game', async () => {});
-    it('should return active game', async () => {});
-    it('should not return finished game', async () => {});
+    it('should return pending game', async () => {
+      // Arrange
+      const { gameId, user1 } = await createPendingGame();
+
+      // Act
+      const result = await getCurrentGameQueryHandler.execute(
+        new GetCurrentGameForUser(user1.id),
+      );
+
+      // Assert
+      validateGamePairViewDto(result);
+      expect(result.id).toBe(gameId);
+      expect(result.status).toBe(GameStatuses.PENDING);
+      expect(result.firstPlayerProgress.player.login).toBe('player1');
+      expect(result.firstPlayerProgress.score).toBe(0);
+      expect(result.firstPlayerProgress.answers).toEqual([]);
+      expect(result.secondPlayerProgress).toBeNull();
+      expect(result.questions).toBeNull(); // Questions not attached in pending state
+      expect(result.startGameDate).toBeNull();
+      expect(result.finishGameDate).toBeNull();
+      expect(result.pairCreateDate).toBeDefined();
+    });
+
+    it('should return active game', async () => {
+      // Arrange
+      const { gameId, user1 } = await createActiveGame();
+
+      // Act
+      const result = await getCurrentGameQueryHandler.execute(
+        new GetCurrentGameForUser(user1.id),
+      );
+
+      // Assert
+      validateGamePairViewDto(result);
+      expect(result.id).toBe(gameId);
+      expect(result.status).toBe(GameStatuses.ACTIVE);
+      expect(result.firstPlayerProgress.player.login).toBe('player1');
+      expect(result.firstPlayerProgress.score).toBe(0);
+      expect(result.firstPlayerProgress.answers).toEqual([]);
+      expect(result.secondPlayerProgress).toBeDefined();
+      expect(result.secondPlayerProgress!.player.login).toBe('player2');
+      expect(result.secondPlayerProgress!.score).toBe(0);
+      expect(result.secondPlayerProgress!.answers).toEqual([]);
+      expect(result.questions).toBeDefined();
+      expect(result.questions).toHaveLength(5); // We created 5 questions
+      expect(result.startGameDate).toBeDefined();
+      expect(result.finishGameDate).toBeNull();
+      expect(result.pairCreateDate).toBeDefined();
+    });
+
+    it('should not return finished game', async () => {
+      // Arrange
+      const { user1 } = await createFinishedGame();
+
+      // Act & Assert
+      await expect(
+        getCurrentGameQueryHandler.execute(new GetCurrentGameForUser(user1.id)),
+      ).rejects.toThrow(DomainException);
+
+      try {
+        await getCurrentGameQueryHandler.execute(
+          new GetCurrentGameForUser(user1.id),
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(DomainException);
+        expect(error.code).toBe(DomainExceptionCode.NotFound);
+        expect(error.message).toBe('No active games found');
+      }
+    });
+
+    it('should throw error when user has no current games', async () => {
+      // Arrange
+      const user = await createTestUser('noGameUser', 'nogame@example.com');
+
+      // Act & Assert
+      await expect(
+        getCurrentGameQueryHandler.execute(new GetCurrentGameForUser(user.id)),
+      ).rejects.toThrow(DomainException);
+
+      try {
+        await getCurrentGameQueryHandler.execute(
+          new GetCurrentGameForUser(user.id),
+        );
+      } catch (error) {
+        expect(error).toBeInstanceOf(DomainException);
+        expect(error.code).toBe(DomainExceptionCode.NotFound);
+        expect(error.message).toBe('No active games found');
+      }
+    });
+
+    it('should return active game for second player', async () => {
+      // Arrange
+      const { gameId, user1, user2 } = await createActiveGame();
+
+      // Act
+      const result = await getCurrentGameQueryHandler.execute(
+        new GetCurrentGameForUser(user2.id),
+      );
+
+      // Assert
+      validateGamePairViewDto(result);
+      expect(result.id).toBe(gameId);
+      expect(result.status).toBe(GameStatuses.ACTIVE);
+    });
+
+    it('should return game with answers when players have answered questions', async () => {
+      // Arrange
+      const { gameId, user1, user2 } = await createActiveGame();
+
+      // Answer one question correctly for user1
+      await answerCommandHandler.execute(
+        new AnswerQuestionCommand(user1.id, '4'), // Correct answer for "What is 2+2?"
+      );
+
+      // Answer one question incorrectly for user2
+      await answerCommandHandler.execute(
+        new AnswerQuestionCommand(user2.id, 'wrong answer'),
+      );
+
+      // Act
+      const result = await getCurrentGameQueryHandler.execute(
+        new GetCurrentGameForUser(user1.id),
+      );
+
+      // Assert
+      validateGamePairViewDto(result);
+      expect(result.id).toBe(gameId);
+      expect(result.status).toBe(GameStatuses.ACTIVE);
+      expect(result.firstPlayerProgress.answers).toHaveLength(1);
+      expect(result.secondPlayerProgress!.answers).toHaveLength(1);
+    });
   });
 });

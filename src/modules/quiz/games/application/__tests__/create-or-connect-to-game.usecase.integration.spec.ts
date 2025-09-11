@@ -47,7 +47,7 @@ describe('Connect or Create Game Command Handler Integration Test', () => {
             database: coreConfig.dbName,
             autoLoadEntities: true,
             synchronize: false,
-            logging: true,
+            logging: false,
           }),
           inject: [CoreConfig],
         }),

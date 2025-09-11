@@ -28,6 +28,7 @@ export class Question extends BaseDbEntity {
     question.body = dto.body;
     question.published = false;
     question.correctAnswers = { answers: dto.answers };
+    question.updatedAt = null;
     return question;
   }
 

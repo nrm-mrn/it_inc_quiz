@@ -41,7 +41,7 @@ describe('GetAllQuestionsQueryHandler Integration', () => {
             database: coreConfig.dbName,
             autoLoadEntities: true,
             synchronize: false,
-            logging: true,
+            logging: false,
           }),
           inject: [CoreConfig],
         }),
@@ -120,7 +120,6 @@ describe('GetAllQuestionsQueryHandler Integration', () => {
             correctAnswers: expect.arrayContaining([expect.any(String)]),
             published: expect.any(Boolean),
             createdAt: expect.any(String),
-            updatedAt: expect.any(String),
           }),
         ]),
       });

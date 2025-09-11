@@ -42,7 +42,7 @@ describe('UpdateQuestionCommandHandler Integration', () => {
             database: coreConfig.dbName,
             autoLoadEntities: true,
             synchronize: false,
-            logging: true,
+            logging: false,
           }),
           inject: [CoreConfig],
         }),

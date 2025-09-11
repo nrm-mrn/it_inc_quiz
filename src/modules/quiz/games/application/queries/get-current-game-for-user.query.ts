@@ -57,13 +57,13 @@ export class GetCurrentGameForUserQueryHandler
       [GameStatus.Pending, GameStatus.Active, query.userId],
     );
 
-    //403 if userId is not participant in the provided gameId
     if (gameWithQuestionsRow.length === 0) {
       throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
-        message: 'User is not a participant in the provided game',
+        code: DomainExceptionCode.NotFound,
+        message: 'No active games found',
       });
     }
+
     const gameWithQuestions = gameWithQuestionsRow[0];
 
     const firstPlayerProgressRows = await this.dataSource.query<
@@ -142,8 +142,6 @@ export class GetCurrentGameForUserQueryHandler
       firstPlayerProgress: firstPlayerProgress,
       secondPlayerProgress: secondPlayerProgress,
     });
-
-    console.log(firstPlayerProgress.answers);
 
     return gamePairView;
   }

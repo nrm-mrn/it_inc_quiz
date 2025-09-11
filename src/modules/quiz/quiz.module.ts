@@ -16,12 +16,19 @@ import { Game } from './games/domain/game.schema';
 import { GameQuestion } from './games/domain/gameQuestions.schema';
 import { Player } from './games/domain/player.schema';
 import { GetCurrentGameForUserQueryHandler } from './games/application/queries/get-current-game-for-user.query';
+import { GameController } from './games/api/games.controller';
+import { AnswerQuestionCommandHandler } from './games/application/usecases/answer-question.usecase';
+import { ConnectCommandHandler } from './games/application/usecases/connect-or-create-game.usecase';
+import { GetAnswerQuery } from './games/application/queries/get-answer.query';
+import { GameRepository } from './games/infrastructure/game.repository';
 
 const usecases = [
   CreateQuestionCommandHandler,
   UpdateQuestionCommandHandler,
   DeleteQuestionCommandHandler,
   SetPublishQuestionCommandHandler,
+  AnswerQuestionCommandHandler,
+  ConnectCommandHandler,
 ];
 
 const queries = [
@@ -29,6 +36,7 @@ const queries = [
   GetAllQuestionsQueryHandler,
   GetGameQueryHandler,
   GetCurrentGameForUserQueryHandler,
+  GetAnswerQuery,
 ];
 
 @Module({
@@ -42,7 +50,7 @@ const queries = [
       Player,
     ]),
   ],
-  controllers: [QuestionsController],
-  providers: [...usecases, ...queries, QuestionsRepository],
+  controllers: [QuestionsController, GameController],
+  providers: [...usecases, ...queries, QuestionsRepository, GameRepository],
 })
 export class QuizModule {}

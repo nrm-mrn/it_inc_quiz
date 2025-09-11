@@ -52,7 +52,7 @@ describe('Answer Question Command Handler Integration Test', () => {
             database: coreConfig.dbName,
             autoLoadEntities: true,
             synchronize: false,
-            logging: true,
+            logging: false,
           }),
           inject: [CoreConfig],
         }),
@@ -268,7 +268,7 @@ describe('Answer Question Command Handler Integration Test', () => {
       expect(updatedGame.status).toBe(GameStatus.Active);
     });
 
-    it.only('should finish game when both players answer all questions', async () => {
+    it('should finish game when both players answer all questions', async () => {
       const { game, user1, user2 } = await createActiveGame();
 
       // Player 1 answers all questions correctly
