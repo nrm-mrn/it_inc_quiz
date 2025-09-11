@@ -63,7 +63,7 @@ export class GameController {
     return this.queryBus.execute(new GetGameQuery(gameId, user.userId));
   }
 
-  @Post('/answers')
+  @Post('/my-current/answers')
   @HttpCode(HttpStatus.OK)
   async answerQuestion(
     @Body() body: AnswerQuestionInputDto,

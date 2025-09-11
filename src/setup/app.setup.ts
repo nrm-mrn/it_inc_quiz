@@ -6,7 +6,7 @@ import { globalThrottler } from './global-requests-throttler.setup';
 export function appSetup(app: NestExpressApplication) {
   cookieParserSetup(app);
   // proxySetup(app);
-  // globalThrottler(app);
+  globalThrottler(app);
   pipesSetup(app);
   // swaggerSetup(app);
 }

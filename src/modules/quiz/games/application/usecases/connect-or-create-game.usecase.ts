@@ -30,6 +30,17 @@ export class ConnectCommandHandler implements ICommandHandler<ConnectCommand> {
         return await this.dataSource.transaction(
           'SERIALIZABLE',
           async (manager) => {
+            const pairExists = await this.gameRepository.checkIfUserInPair(
+              command.userId,
+              manager,
+            );
+            if (pairExists) {
+              throw new DomainException({
+                code: DomainExceptionCode.Forbidden,
+                message:
+                  'user is already participating in an unfinished game pair',
+              });
+            }
             const player = Player.Create({
               userId: command.userId,
             });

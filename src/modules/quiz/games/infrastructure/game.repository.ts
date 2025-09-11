@@ -145,7 +145,6 @@ export class GameRepository {
       .leftJoinAndSelect('game.player2', 'player2')
       .where('(player1."userId" = :id OR player2."userId" = :id)', { id })
       .andWhere('game.status = :status', { status: GameStatus.Active });
-    //added ordering just for safety because sometimes in testing I need to rely on order of the arrays
     const game = await q.getOne();
     if (!game) {
       throw new DomainException({
@@ -153,6 +152,20 @@ export class GameRepository {
         message: 'No active game found for userId',
       });
     }
+    return game;
+  }
+
+  async checkIfUserInPair(id: UUID, manager?: EntityManager): Promise<boolean> {
+    const game = await this.getGameRepo(manager)
+      .createQueryBuilder('game')
+      .leftJoinAndSelect('game.player1', 'player1')
+      .leftJoinAndSelect('game.player2', 'player2')
+      .where('(player1."userId" = :id OR player2."userId" = :id)', { id })
+      .andWhere('(game.status = :active OR game.status = :pending)', {
+        active: GameStatus.Active,
+        pending: GameStatus.Pending,
+      })
+      .getExists();
     return game;
   }
 
