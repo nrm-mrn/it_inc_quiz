@@ -44,7 +44,7 @@ export class GamePairViewDto {
   secondPlayerProgress: GamePlayerProgressViewModel | null;
   questions: QuestionViewModel[] | null;
   status: GameStatuses;
-  pairCreateDate: string;
+  pairCreatedDate: string;
   startGameDate: string | null;
   finishGameDate: string | null;
 
@@ -75,7 +75,7 @@ export class GamePairViewDto {
           message: 'unknown game status recieved',
         });
     }
-    view.pairCreateDate = dto.game.createdAt.toISOString();
+    view.pairCreatedDate = dto.game.createdAt.toISOString();
     view.startGameDate = dto.game.startedAt
       ? dto.game.startedAt.toISOString()
       : null;

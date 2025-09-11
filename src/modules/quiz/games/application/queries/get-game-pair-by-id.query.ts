@@ -84,14 +84,43 @@ export class GetGameQueryHandler
     }
     const gameWithQuestions = gameWithQuestionsRow[0];
 
-    const firstPlayerProgressRows = await this.dataSource.query<
+    const firstPlayerProgress = await this.getPlayerProgressRows(
+      gameWithQuestions.player1Id,
+    );
+    if (!firstPlayerProgress) {
+      throw new DomainException({
+        code: DomainExceptionCode.InternalServerError,
+        message: 'Encountered a game without first player progress',
+      });
+    }
+
+    let secondPlayerProgress: GamePlayerProgressViewModel | null = null;
+    if (gameWithQuestions.player2Id) {
+      secondPlayerProgress = await this.getPlayerProgressRows(
+        gameWithQuestions.player2Id,
+      );
+    }
+
+    const gamePairView = GamePairViewDto.MapToGamePairView({
+      game: gameWithQuestions,
+      firstPlayerProgress,
+      secondPlayerProgress,
+    });
+
+    return gamePairView;
+  }
+
+  async getPlayerProgressRows(
+    playerId: UUID,
+  ): Promise<GamePlayerProgressViewModel | null> {
+    const secondPlayerProgressRows = await this.dataSource.query<
       { progress: GamePlayerProgressViewModel }[]
     >(
       /*sql*/ `
         SELECT
           json_build_object(
             'player', json_build_object(
-              'id', p.id,
+              'id', p."userId",
               'login', u.login
             ),
             'answers', coalesce(
@@ -114,53 +143,8 @@ export class GetGameQueryHandler
         WHERE p.id = $1
         GROUP BY p.id, u.login, p.score
       `,
-      [gameWithQuestions.player1Id],
+      [playerId],
     );
-    const firstPlayerProgress = firstPlayerProgressRows[0].progress;
-
-    let secondPlayerProgress: GamePlayerProgressViewModel | null = null;
-    if (gameWithQuestions.player2Id) {
-      const secondPlayerProgressRows = await this.dataSource.query<
-        { progress: GamePlayerProgressViewModel }[]
-      >(
-        /*sql*/ `
-        SELECT
-          json_build_object(
-            'player', json_build_object(
-              'id', p.id,
-              'login', u.login
-            ),
-            'answers', coalesce(
-              json_agg(
-                json_build_object(
-                  'questionId', pa."questionId",
-                  'answerStatus', CASE
-                    WHEN pa.status = true THEN 'Correct'
-                    ELSE 'Incorrect'
-                  END,
-                  'addedAt', pa."createdAt"
-                )
-              ) FILTER (WHERE pa.id IS NOT null), '[]'::json
-            ),
-            'score', p.score
-          ) AS progress
-        FROM player AS p
-        LEFT JOIN users AS u ON p."userId" = u.id
-        LEFT JOIN player_answer AS pa ON p.id = pa."playerId"
-        WHERE p.id = $1
-        GROUP BY p.id, u.login, p.score
-      `,
-        [gameWithQuestions.player2Id],
-      );
-      secondPlayerProgress = secondPlayerProgressRows[0].progress;
-    }
-
-    const gamePairView = GamePairViewDto.MapToGamePairView({
-      game: gameWithQuestions,
-      firstPlayerProgress: firstPlayerProgress,
-      secondPlayerProgress: secondPlayerProgress,
-    });
-
-    return gamePairView;
+    return secondPlayerProgressRows[0].progress;
   }
 }

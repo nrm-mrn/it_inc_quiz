@@ -19,7 +19,7 @@ import { GetCurrentGameForUserQueryHandler } from './games/application/queries/g
 import { GameController } from './games/api/games.controller';
 import { AnswerQuestionCommandHandler } from './games/application/usecases/answer-question.usecase';
 import { ConnectCommandHandler } from './games/application/usecases/connect-or-create-game.usecase';
-import { GetAnswerQuery } from './games/application/queries/get-answer.query';
+import { GetAnswerQueryHandler } from './games/application/queries/get-answer.query';
 import { GameRepository } from './games/infrastructure/game.repository';
 
 const usecases = [
@@ -36,7 +36,7 @@ const queries = [
   GetAllQuestionsQueryHandler,
   GetGameQueryHandler,
   GetCurrentGameForUserQueryHandler,
-  GetAnswerQuery,
+  GetAnswerQueryHandler,
 ];
 
 @Module({

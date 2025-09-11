@@ -224,8 +224,8 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
     expect(Array.isArray(dto.firstPlayerProgress.answers)).toBe(true);
     expect(typeof dto.firstPlayerProgress.score).toBe('number');
     expect(Object.values(GameStatuses)).toContain(dto.status);
-    expect(typeof dto.pairCreateDate).toBe('string');
-    expect(() => new Date(dto.pairCreateDate)).not.toThrow();
+    expect(typeof dto.pairCreatedDate).toBe('string');
+    expect(() => new Date(dto.pairCreatedDate)).not.toThrow();
 
     // Validate answer structure if present
     dto.firstPlayerProgress.answers.forEach((answer) => {
@@ -293,7 +293,7 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
       expect(result.questions).toBeNull(); // Questions not attached in pending state
       expect(result.startGameDate).toBeNull();
       expect(result.finishGameDate).toBeNull();
-      expect(result.pairCreateDate).toBeDefined();
+      expect(result.pairCreatedDate).toBeDefined();
     });
 
     it('should return active game', async () => {
@@ -320,7 +320,7 @@ describe('Get Current Game Pair For User Query Handler Integration Test', () => 
       expect(result.questions).toHaveLength(5); // We created 5 questions
       expect(result.startGameDate).toBeDefined();
       expect(result.finishGameDate).toBeNull();
-      expect(result.pairCreateDate).toBeDefined();
+      expect(result.pairCreatedDate).toBeDefined();
     });
 
     it('should not return finished game', async () => {

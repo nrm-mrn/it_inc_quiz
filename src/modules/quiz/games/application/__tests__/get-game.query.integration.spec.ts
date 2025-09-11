@@ -158,6 +158,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     const gameId = await connectCommandHandler.execute(
       new ConnectCommand(user1.id),
     );
+    console.log(user1);
 
     return { gameId, user1 };
   }
@@ -221,8 +222,8 @@ describe('Get Game Pair Query Handler Integration Test', () => {
     expect(Array.isArray(dto.firstPlayerProgress.answers)).toBe(true);
     expect(typeof dto.firstPlayerProgress.score).toBe('number');
     expect(Object.values(GameStatuses)).toContain(dto.status);
-    expect(typeof dto.pairCreateDate).toBe('string');
-    expect(() => new Date(dto.pairCreateDate)).not.toThrow();
+    expect(typeof dto.pairCreatedDate).toBe('string');
+    expect(() => new Date(dto.pairCreatedDate)).not.toThrow();
 
     // Validate answer structure if present
     dto.firstPlayerProgress.answers.forEach((answer) => {
@@ -286,6 +287,7 @@ describe('Get Game Pair Query Handler Integration Test', () => {
       expect(result.firstPlayerProgress.answers).toHaveLength(0);
       expect(result.firstPlayerProgress.score).toBe(0);
       expect(result.firstPlayerProgress.player.login).toBe('player1');
+      expect(result.firstPlayerProgress.player.id).toBe(user1.id);
     });
 
     it('should return correct active game pair', async () => {
