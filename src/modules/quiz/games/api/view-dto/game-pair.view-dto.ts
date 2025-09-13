@@ -26,16 +26,27 @@ export class QuestionViewModel {
   body: string;
 }
 
-export class GameWithQuestionsModel {
+// export class GameWithQuestionsModel {
+//   id: UUID;
+//   player1Id: UUID;
+//   player2Id: UUID | null;
+//   status: GameStatus;
+//   createdAt: Date;
+//   startedAt: Date | null;
+//   finishedAt: Date | null;
+//   deletedAt: Date | null;
+//   questions: QuestionViewModel[];
+// }
+
+export class RawGameDbView {
   id: UUID;
-  player1Id: UUID;
-  player2Id: UUID | null;
+  firstPlayerProgress: GamePlayerProgressViewModel;
+  secondPlayerProgress: GamePlayerProgressViewModel | null;
+  questions: QuestionViewModel[];
   status: GameStatus;
   createdAt: Date;
   startedAt: Date | null;
   finishedAt: Date | null;
-  deletedAt: Date | null;
-  questions: QuestionViewModel[];
 }
 
 export class GamePairViewDto {
@@ -48,18 +59,13 @@ export class GamePairViewDto {
   startGameDate: string | null;
   finishGameDate: string | null;
 
-  static MapToGamePairView(dto: {
-    game: GameWithQuestionsModel;
-    firstPlayerProgress: GamePlayerProgressViewModel;
-    secondPlayerProgress: GamePlayerProgressViewModel | null;
-  }): GamePairViewDto {
+  static MapToGamePairView(game: RawGameDbView): GamePairViewDto {
     const view = new this();
-    view.id = dto.game.id;
-    view.firstPlayerProgress = dto.firstPlayerProgress;
-    view.secondPlayerProgress = dto.secondPlayerProgress;
-    view.questions =
-      dto.game.questions.length === 0 ? null : dto.game.questions;
-    switch (dto.game.status) {
+    view.id = game.id;
+    view.firstPlayerProgress = game.firstPlayerProgress;
+    view.secondPlayerProgress = game.secondPlayerProgress;
+    view.questions = game.questions.length === 0 ? null : game.questions;
+    switch (game.status) {
       case GameStatus.Pending:
         view.status = GameStatuses.PENDING;
         break;
@@ -75,12 +81,10 @@ export class GamePairViewDto {
           message: 'unknown game status recieved',
         });
     }
-    view.pairCreatedDate = dto.game.createdAt.toISOString();
-    view.startGameDate = dto.game.startedAt
-      ? dto.game.startedAt.toISOString()
-      : null;
-    view.finishGameDate = dto.game.finishedAt
-      ? dto.game.finishedAt.toISOString()
+    view.pairCreatedDate = game.createdAt.toISOString();
+    view.startGameDate = game.startedAt ? game.startedAt.toISOString() : null;
+    view.finishGameDate = game.finishedAt
+      ? game.finishedAt.toISOString()
       : null;
     return view;
   }

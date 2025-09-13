@@ -14,7 +14,10 @@ export enum GameStatus {
 
 @Entity()
 export class Game extends BaseDbEntity {
-  @Column({ type: 'enum', enum: GameStatus, enumName: 'game_status_enum' })
+  @Column({
+    type: 'varchar',
+    collation: 'C',
+  })
   status: GameStatus;
 
   @OneToOne(() => Player, (player) => player.game)
