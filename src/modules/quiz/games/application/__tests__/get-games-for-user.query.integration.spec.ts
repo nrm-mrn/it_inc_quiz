@@ -30,16 +30,12 @@ import {
   GamePairViewDto,
   GameStatuses,
 } from '../../api/view-dto/game-pair.view-dto';
-import { DomainException } from 'src/core/exceptions/domain-exceptions';
-import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 import { UUID } from 'crypto';
-import { GetCurrentGameForUser } from '../queries/get-current-game-for-user.query';
 import { AnswerStatuses } from '../../api/view-dto/answer.view-dto';
 import {
   GetUserGames,
   GetUserGamesQueryHandler,
 } from '../queries/get-user-games.query';
-import { GetGameQuery } from '../queries/get-game-pair-by-id.query';
 import {
   GamesSortBy,
   GetUserGamesQueryParams,
@@ -71,7 +67,7 @@ describe('Get History Of Games For User Query Handler Integration Test', () => {
             database: coreConfig.dbName,
             autoLoadEntities: true,
             synchronize: false,
-            logging: true,
+            logging: false,
           }),
           inject: [CoreConfig],
         }),
@@ -278,39 +274,479 @@ describe('Get History Of Games For User Query Handler Integration Test', () => {
   }
 
   describe('execute', () => {
-    it('should get paginated games for user', async () => {
+    it('should return empty result when user has no games', async () => {
       // Arrange
-      const user1 = await createTestUser('player1', 'player1@example.com');
-      const user2 = await createTestUser('player2', 'player2@example.com');
-      const { gameId } = await createFinishedGame(user1, user2);
+      const user = await createTestUser('testuser', 'test@example.com');
+      const queryParams = new GetUserGamesQueryParams();
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toEqual([]);
+      expect(result.totalCount).toBe(0);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(10);
+      expect(result.pagesCount).toBe(0);
+    });
+
+    it('should return paginated games with default sorting (pairCreatedDate DESC)', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+
+      // Create finished game first (user1 vs user2)
       await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create finished game (user1 vs user3)
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user3);
+
+      // Create pending game (user1 only)
+      await createPendingGame(user1);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.pageSize = 2;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(2);
+      expect(result.totalCount).toBe(3);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(2);
+      expect(result.pagesCount).toBe(2);
+
+      // Verify default sorting by pairCreatedDate DESC (newest first)
+      const firstGameDate = new Date(result.items[0].pairCreatedDate);
+      const secondGameDate = new Date(result.items[1].pairCreatedDate);
+      expect(firstGameDate.getTime()).toBeGreaterThanOrEqual(
+        secondGameDate.getTime(),
+      );
+
+      // Validate structure
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should return second page of paginated results', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+
+      // Create 2 finished games first
+      await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user3);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create 1 pending game
+      await createPendingGame(user1);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.pageSize = 2;
+      queryParams.pageNumber = 2;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(1); // Only 1 item on second page
+      expect(result.totalCount).toBe(3);
+      expect(result.page).toBe(2);
+      expect(result.pageSize).toBe(2);
+      expect(result.pagesCount).toBe(2);
+
+      validateGamePairViewDto(result.items[0]);
+    });
+
+    it('should sort by status with secondary sort by pairCreatedDate DESC', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+      const user4 = await createTestUser('user4', 'user4@example.com');
+
+      // Create finished game first
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user2);
+
+      // Create active game (user1 vs user3)
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createActiveGame(user1, user3);
+
+      // Create pending game (user4 only, so user1 can't have another active/pending)
+      await createPendingGame(user4);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.Status;
+      queryParams.sortDirection = SortDirection.ASC;
+
+      // Act - Get games for user1 (has finished and active games)
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(2);
+
+      // Verify primary sorting by status with collation C (binary sort order)
+      // 'active' comes before 'finished' in binary sort
+      expect(result.items[0].status).toBe(GameStatuses.ACTIVE);
+      expect(result.items[1].status).toBe(GameStatuses.FINISHED);
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should sort by status DESC with collation C ordering', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+
+      // Create finished game first
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user2);
+
+      // Create active game
+      await createActiveGame(user1, user3);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.Status;
+      queryParams.sortDirection = SortDirection.DESC;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(2);
+
+      // Verify DESC sorting by status with collation C
+      // 'finished' comes before 'active' in DESC binary sort
+      expect(result.items[0].status).toBe(GameStatuses.FINISHED);
+      expect(result.items[1].status).toBe(GameStatuses.ACTIVE);
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should sort by startedAt with secondary sort by pairCreatedDate DESC', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+
+      // Create finished games first (they have start times)
+      await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await createFinishedGame(user1, user3);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create pending game (no start time)
+      await createPendingGame(user1);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.GameStarted;
+      queryParams.sortDirection = SortDirection.DESC;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(3);
+
+      // Games with startGameDate should come first (newest first), then null values
+      const gamesWithStartDate = result.items.filter(
+        (g) => g.startGameDate !== null,
+      );
+      const gamesWithoutStartDate = result.items.filter(
+        (g) => g.startGameDate === null,
+      );
+
+      expect(gamesWithStartDate.length).toBe(2);
+      expect(gamesWithoutStartDate.length).toBe(1);
+
+      // Verify that games with start dates are sorted by start date DESC
+      if (gamesWithStartDate.length > 1) {
+        const firstStartDate = new Date(gamesWithStartDate[0].startGameDate!);
+        const secondStartDate = new Date(gamesWithStartDate[1].startGameDate!);
+        expect(firstStartDate.getTime()).toBeGreaterThanOrEqual(
+          secondStartDate.getTime(),
+        );
+      }
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should sort by finishedAt with secondary sort by pairCreatedDate DESC', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+      const user4 = await createTestUser('user4', 'user4@example.com');
+
+      // Create finished games first
+      await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await createFinishedGame(user1, user3);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create active game (no finish time)
+      await createActiveGame(user1, user4);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.GameFinished;
+      queryParams.sortDirection = SortDirection.DESC;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(3);
+
+      // Games with finishGameDate should come first, then null values
+      const finishedGames = result.items.filter(
+        (g) => g.finishGameDate !== null,
+      );
+      const unfinishedGames = result.items.filter(
+        (g) => g.finishGameDate === null,
+      );
+
+      expect(finishedGames.length).toBe(2);
+      expect(unfinishedGames.length).toBe(1);
+
+      // Verify finished games are sorted by finish date DESC
+      if (finishedGames.length > 1) {
+        const firstFinishDate = new Date(finishedGames[0].finishGameDate!);
+        const secondFinishDate = new Date(finishedGames[1].finishGameDate!);
+        expect(firstFinishDate.getTime()).toBeGreaterThanOrEqual(
+          secondFinishDate.getTime(),
+        );
+      }
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should sort by id with secondary sort by pairCreatedDate DESC', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+
+      // Create finished games first
+      await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user3);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // Create pending game
+      await createPendingGame(user1);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.Id;
+      queryParams.sortDirection = SortDirection.ASC;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(3);
+
+      // Verify sorting by ID ASC
+      for (let i = 0; i < result.items.length - 1; i++) {
+        expect(
+          result.items[i].id.localeCompare(result.items[i + 1].id),
+        ).toBeLessThanOrEqual(0);
+      }
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should handle large page size correctly', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+
+      // Create finished game first, then pending
       await createFinishedGame(user1, user2);
       await createPendingGame(user1);
 
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.pageSize = 100; // Much larger than actual count
+
       // Act
-      const q = new GetUserGamesQueryParams();
-      q.sortBy = GamesSortBy.Status;
-      q.sortDirection = SortDirection.ASC;
-      q.pageSize = 2;
-      q.pageNumber = 2;
       const result = await getGameHistory.execute(
-        new GetUserGames(user1.id, q),
+        new GetUserGames(user1.id, queryParams),
       );
-      console.log(result);
-      console.log(result.items);
 
       // Assert
-      // validateGamePairViewDto(result);
-      // expect(result.id).toBe(gameId);
-      // expect(result.status).toBe(GameStatuses.PENDING);
-      // expect(result.firstPlayerProgress.player.login).toBe('player1');
-      // expect(result.firstPlayerProgress.score).toBe(0);
-      // expect(result.firstPlayerProgress.answers).toEqual([]);
-      // expect(result.secondPlayerProgress).toBeNull();
-      // expect(result.questions).toBeNull(); // Questions not attached in pending state
-      // expect(result.startGameDate).toBeNull();
-      // expect(result.finishGameDate).toBeNull();
-      // expect(result.pairCreatedDate).toBeDefined();
+      expect(result.items).toHaveLength(2);
+      expect(result.totalCount).toBe(2);
+      expect(result.page).toBe(1);
+      expect(result.pageSize).toBe(100);
+      expect(result.pagesCount).toBe(1);
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should return games where user is either player1 or player2', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+      const user4 = await createTestUser('user4', 'user4@example.com');
+
+      // Create finished games where user2 participates
+      await createFinishedGame(user2, user1); // user2 as player1
+      await createFinishedGame(user1, user2); // user2 as player2
+
+      // Create a game where user2 is not involved
+      await createFinishedGame(user3, user4); // user2 not involved
+
+      const queryParams = new GetUserGamesQueryParams();
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user2.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(2);
+      expect(result.totalCount).toBe(2);
+
+      // Verify user2 is in both games
+      result.items.forEach((game) => {
+        const isPlayer1 = game.firstPlayerProgress.player.id === user2.id;
+        const isPlayer2 = game.secondPlayerProgress?.player.id === user2.id;
+        expect(isPlayer1 || isPlayer2).toBe(true);
+      });
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should maintain secondary sort by pairCreatedDate when primary sort values are equal', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+      const user4 = await createTestUser('user4', 'user4@example.com');
+
+      // Create multiple finished games (same status) with different creation times
+      await createFinishedGame(user1, user2);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      await createFinishedGame(user1, user3);
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await createFinishedGame(user1, user4);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.Status;
+      queryParams.sortDirection = SortDirection.ASC;
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(3);
+
+      // All games should have the same status
+      result.items.forEach((game) => {
+        expect(game.status).toBe(GameStatuses.FINISHED);
+      });
+
+      // Verify secondary sort by pairCreatedDate DESC (newest first)
+      for (let i = 0; i < result.items.length - 1; i++) {
+        const currentDate = new Date(result.items[i].pairCreatedDate);
+        const nextDate = new Date(result.items[i + 1].pairCreatedDate);
+        expect(currentDate.getTime()).toBeGreaterThanOrEqual(
+          nextDate.getTime(),
+        );
+      }
+
+      result.items.forEach(validateGamePairViewDto);
+    });
+
+    it('should handle edge case with empty page beyond total pages', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+
+      // Create only 1 game
+      await createFinishedGame(user1, user2);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.pageSize = 10;
+      queryParams.pageNumber = 5; // Way beyond available data
+
+      // Act
+      const result = await getGameHistory.execute(
+        new GetUserGames(user1.id, queryParams),
+      );
+
+      // Assert
+      expect(result.items).toHaveLength(0);
+      expect(result.totalCount).toBe(1);
+      expect(result.page).toBe(5);
+      expect(result.pageSize).toBe(10);
+      expect(result.pagesCount).toBe(1);
+    });
+
+    it('should verify collation C affects status sorting with all game statuses', async () => {
+      // Arrange
+      const user1 = await createTestUser('user1', 'user1@example.com');
+      const user2 = await createTestUser('user2', 'user2@example.com');
+      const user3 = await createTestUser('user3', 'user3@example.com');
+      const user4 = await createTestUser('user4', 'user4@example.com');
+      const user5 = await createTestUser('user5', 'user5@example.com');
+
+      // Create one game of each status for different users to test sorting
+      // Note: We can't create all statuses for the same user due to business rules
+
+      // Create finished game (user1 vs user2)
+      await createFinishedGame(user1, user2);
+
+      // Create active game (user3 vs user4)
+      await createActiveGame(user3, user4);
+
+      // Create pending game (user5 only)
+      await createPendingGame(user5);
+
+      const queryParams = new GetUserGamesQueryParams();
+      queryParams.sortBy = GamesSortBy.Status;
+      queryParams.sortDirection = SortDirection.ASC;
+      queryParams.pageSize = 10;
+
+      // Act - Get all games for all users to see status sorting
+      const results = await Promise.all([
+        getGameHistory.execute(new GetUserGames(user1.id, queryParams)),
+        getGameHistory.execute(new GetUserGames(user3.id, queryParams)),
+        getGameHistory.execute(new GetUserGames(user5.id, queryParams)),
+      ]);
+
+      // Assert - Verify each user's games have expected status
+      expect(results[0].items[0].status).toBe(GameStatuses.FINISHED); // 'finished'
+      expect(results[1].items[0].status).toBe(GameStatuses.ACTIVE); // 'active'
+      expect(results[2].items[0].status).toBe(GameStatuses.PENDING); // 'pending'
     });
   });
 });
