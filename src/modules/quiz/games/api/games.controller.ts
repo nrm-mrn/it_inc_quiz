@@ -22,8 +22,13 @@ import { AnswerQuestionInputDto } from './input-dto/answer-question.input-dto';
 import { AnswerViewDto } from './view-dto/answer.view-dto';
 import { AnswerQuestionCommand } from '../application/usecases/answer-question.usecase';
 import { GetAnswerQuery } from '../application/queries/get-answer.query';
+import { StatisticsForUserViewDto } from './view-dto/statistics-for-user';
+import { GetStatisticsForUserQuery } from '../application/queries/get-statistics-for-user';
+import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
+import { GetUserGames } from '../application/queries/get-user-games.query';
+import { GetUserGamesQueryParams } from './input-dto/get-user-games-query-params.input-dto';
 
-@Controller('pair-game-quiz/pairs/')
+@Controller('pair-game-quiz/')
 @UseGuards(JwtAuthGuard)
 export class GameController {
   constructor(
@@ -31,7 +36,7 @@ export class GameController {
     private readonly queryBus: QueryBus,
   ) {}
 
-  @Get('/my-current')
+  @Get('/pairs/my-current')
   @HttpCode(HttpStatus.OK)
   async getCurrentGame(
     @ExtractUserFromRequest() user: UserContextDto,
@@ -41,7 +46,7 @@ export class GameController {
     );
   }
 
-  @Get('/:id')
+  @Get('/pairs/:id')
   @HttpCode(HttpStatus.OK)
   async getGame(
     @Param('id', UuidValidationPipe) id: UUID,
@@ -52,7 +57,7 @@ export class GameController {
     );
   }
 
-  @Post('/connection')
+  @Post('/pairs/connection')
   @HttpCode(HttpStatus.OK)
   async connect(
     @ExtractUserFromRequest() user: UserContextDto,
@@ -63,7 +68,7 @@ export class GameController {
     return this.queryBus.execute(new GetGameQuery(gameId, user.userId));
   }
 
-  @Post('/my-current/answers')
+  @Post('/pairs/my-current/answers')
   @HttpCode(HttpStatus.OK)
   async answerQuestion(
     @Body() body: AnswerQuestionInputDto,
@@ -75,5 +80,28 @@ export class GameController {
     return this.queryBus.execute<GetAnswerQuery, AnswerViewDto>(
       new GetAnswerQuery(answerId),
     );
+  }
+
+  @Get('/users/my-statistic')
+  @HttpCode(HttpStatus.OK)
+  async getStatistic(
+    @ExtractUserFromRequest() user: UserContextDto,
+  ): Promise<StatisticsForUserViewDto> {
+    return this.queryBus.execute<
+      GetStatisticsForUserQuery,
+      StatisticsForUserViewDto
+    >(new GetStatisticsForUserQuery(user.userId));
+  }
+
+  @Get('/pairs/my')
+  @HttpCode(HttpStatus.OK)
+  async getUserGames(
+    @ExtractUserFromRequest() user: UserContextDto,
+    @Body() query: GetUserGamesQueryParams,
+  ): Promise<PaginatedViewDto<GamePairViewDto[]>> {
+    return this.queryBus.execute<
+      GetUserGames,
+      PaginatedViewDto<GamePairViewDto[]>
+    >(new GetUserGames(user.userId, query));
   }
 }

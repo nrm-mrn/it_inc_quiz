@@ -40,7 +40,6 @@ export class GetStatisticsForUserQueryHandler
         `,
       [query.userId],
     );
-    console.log(rows);
 
     const stats = rows[0];
 
