@@ -14,10 +14,19 @@ import { PlayerAnswer } from './answer.schema';
 import { CreatePlayerDomainDto } from './dto/create-player-domain-dto';
 import { BaseDbEntity } from 'src/core/entities/baseDbEntity';
 
+export enum PlayerGameStatus {
+  WINNER = 'won',
+  LOSER = 'lost',
+  DRAW = 'draw',
+}
+
 @Entity()
 export class Player extends BaseDbEntity {
   @Column({ type: 'int' })
   score: number;
+
+  @Column({ type: 'varchar', collation: 'C', nullable: true })
+  status: PlayerGameStatus | null;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'userId' })
@@ -41,5 +50,17 @@ export class Player extends BaseDbEntity {
 
   addAnswer(answer: PlayerAnswer) {
     this.answers.push(answer);
+  }
+
+  winner() {
+    this.status = PlayerGameStatus.WINNER;
+  }
+
+  loser() {
+    this.status = PlayerGameStatus.LOSER;
+  }
+
+  draw() {
+    this.status = PlayerGameStatus.DRAW;
   }
 }

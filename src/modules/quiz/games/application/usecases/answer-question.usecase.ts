@@ -6,7 +6,6 @@ import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
 import { QuestionsRepository } from 'src/modules/quiz/questions/infrastructure/questions.repository';
 import { PlayerAnswer } from '../../domain/answer.schema';
-import { GameStatus } from '../../domain/game.schema';
 import { DataSource, QueryFailedError } from 'typeorm';
 import { DatabaseError } from 'pg';
 
@@ -88,6 +87,16 @@ export class AnswerQuestionCommandHandler
                 otherPlayer.score += 1;
               }
               game.finishGame();
+              if (player.score > otherPlayer.score) {
+                player.winner();
+                otherPlayer.loser();
+              } else if (player.score < otherPlayer.score) {
+                player.loser();
+                otherPlayer.winner();
+              } else {
+                player.draw();
+                otherPlayer.draw();
+              }
             }
             const res = await Promise.all([
               this.gameRepository.saveAnswer(answer, manager),
