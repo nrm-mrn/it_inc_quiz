@@ -23,6 +23,7 @@ import { GetAnswerQueryHandler } from './games/application/queries/get-answer.qu
 import { GameRepository } from './games/infrastructure/game.repository';
 import { GetUserGamesQueryHandler } from './games/application/queries/get-user-games.query';
 import { GetStatisticsForUserQueryHandler } from './games/application/queries/get-statistics-for-user';
+import { GetTopUsersQueryHandler } from './games/application/queries/get-top-users.query';
 
 const usecases = [
   CreateQuestionCommandHandler,
@@ -41,6 +42,7 @@ const queries = [
   GetAnswerQueryHandler,
   GetUserGamesQueryHandler,
   GetStatisticsForUserQueryHandler,
+  GetTopUsersQueryHandler,
 ];
 
 @Module({

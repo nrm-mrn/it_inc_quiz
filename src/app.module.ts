@@ -26,7 +26,7 @@ import { QuizModule } from './modules/quiz/quiz.module';
         database: coreConfig.dbName,
         autoLoadEntities: true,
         synchronize: false,
-        logging: true,
+        logging: false,
       }),
       inject: [CoreConfig],
     }),

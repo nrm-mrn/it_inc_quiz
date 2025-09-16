@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
@@ -27,15 +28,50 @@ import { GetStatisticsForUserQuery } from '../application/queries/get-statistics
 import { PaginatedViewDto } from 'src/core/dto/base.paginated.view-dto';
 import { GetUserGames } from '../application/queries/get-user-games.query';
 import { GetUserGamesQueryParams } from './input-dto/get-user-games-query-params.input-dto';
+import { GetTopUsersQueryParams } from './input-dto/get-top-users.input-dto';
+import { TopUserViewDto } from './view-dto/top-users.view-dto';
 
 @Controller('pair-game-quiz/')
-@UseGuards(JwtAuthGuard)
 export class GameController {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly queryBus: QueryBus,
   ) {}
 
+  @UseGuards(JwtAuthGuard)
+  @Get('/users/my-statistic')
+  @HttpCode(HttpStatus.OK)
+  async getStatistic(
+    @ExtractUserFromRequest() user: UserContextDto,
+  ): Promise<StatisticsForUserViewDto> {
+    return this.queryBus.execute<
+      GetStatisticsForUserQuery,
+      StatisticsForUserViewDto
+    >(new GetStatisticsForUserQuery(user.userId));
+  }
+
+  @Get('/users/top')
+  @HttpCode(HttpStatus.OK)
+  async getTopUsers(
+    @Query() query: GetTopUsersQueryParams,
+  ): Promise<PaginatedViewDto<TopUserViewDto[]>> {
+    query.validateSorting();
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('/pairs/my')
+  @HttpCode(HttpStatus.OK)
+  async getUserGames(
+    @ExtractUserFromRequest() user: UserContextDto,
+    @Param() query: GetUserGamesQueryParams,
+  ): Promise<PaginatedViewDto<GamePairViewDto[]>> {
+    return this.queryBus.execute<
+      GetUserGames,
+      PaginatedViewDto<GamePairViewDto[]>
+    >(new GetUserGames(user.userId, query));
+  }
+
+  @UseGuards(JwtAuthGuard)
   @Get('/pairs/my-current')
   @HttpCode(HttpStatus.OK)
   async getCurrentGame(
@@ -46,6 +82,7 @@ export class GameController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('/pairs/:id')
   @HttpCode(HttpStatus.OK)
   async getGame(
@@ -57,6 +94,7 @@ export class GameController {
     );
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('/pairs/connection')
   @HttpCode(HttpStatus.OK)
   async connect(
@@ -68,6 +106,7 @@ export class GameController {
     return this.queryBus.execute(new GetGameQuery(gameId, user.userId));
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('/pairs/my-current/answers')
   @HttpCode(HttpStatus.OK)
   async answerQuestion(
@@ -80,28 +119,5 @@ export class GameController {
     return this.queryBus.execute<GetAnswerQuery, AnswerViewDto>(
       new GetAnswerQuery(answerId),
     );
-  }
-
-  @Get('/users/my-statistic')
-  @HttpCode(HttpStatus.OK)
-  async getStatistic(
-    @ExtractUserFromRequest() user: UserContextDto,
-  ): Promise<StatisticsForUserViewDto> {
-    return this.queryBus.execute<
-      GetStatisticsForUserQuery,
-      StatisticsForUserViewDto
-    >(new GetStatisticsForUserQuery(user.userId));
-  }
-
-  @Get('/pairs/my')
-  @HttpCode(HttpStatus.OK)
-  async getUserGames(
-    @ExtractUserFromRequest() user: UserContextDto,
-    @Body() query: GetUserGamesQueryParams,
-  ): Promise<PaginatedViewDto<GamePairViewDto[]>> {
-    return this.queryBus.execute<
-      GetUserGames,
-      PaginatedViewDto<GamePairViewDto[]>
-    >(new GetUserGames(user.userId, query));
   }
 }

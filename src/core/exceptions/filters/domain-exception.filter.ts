@@ -30,6 +30,10 @@ export class DomainHttpExceptionFilter implements ExceptionFilter {
     //   this.logger.error(exception.message);
     //   this.logger.error(exception.extensions);
     // }
+    // if (exception.code === DomainExceptionCode.BadRequest) {
+    //   this.logger.error(exception.message);
+    //   this.logger.error(exception.extensions);
+    // }
     let body = {};
     if (exception.extensions) {
       body = this.buildResponseBody(exception, exception.extensions);
