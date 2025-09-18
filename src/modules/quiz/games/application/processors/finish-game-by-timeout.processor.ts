@@ -20,7 +20,6 @@ export class FinishGameProcessor extends WorkerHost {
     super();
   }
   async process(job: Job<FinishGameByTimeotJobDto>): Promise<any> {
-    console.log('processor start');
     const retries = 3;
     let attempt = 0;
     while (true) {
@@ -69,7 +68,11 @@ export class FinishGameProcessor extends WorkerHost {
                 game.player2.draw();
               }
               game.finishGame();
-              await this.gameRepository.saveGame(game, manager);
+              await Promise.all([
+                this.gameRepository.saveGame(game, manager),
+                this.gameRepository.savePlayer(game.player1, manager),
+                this.gameRepository.savePlayer(game.player2, manager),
+              ]);
             }
             return;
           },
