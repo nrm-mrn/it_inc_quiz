@@ -30,6 +30,7 @@ import { GetUserGames } from '../application/queries/get-user-games.query';
 import { GetUserGamesQueryParams } from './input-dto/get-user-games-query-params.input-dto';
 import { GetTopUsersQueryParams } from './input-dto/get-top-users.input-dto';
 import { TopUserViewDto } from './view-dto/top-users.view-dto';
+import { GetTopUsers } from '../application/queries/get-top-users.query';
 
 @Controller('pair-game-quiz/')
 export class GameController {
@@ -56,6 +57,10 @@ export class GameController {
     @Query() query: GetTopUsersQueryParams,
   ): Promise<PaginatedViewDto<TopUserViewDto[]>> {
     query.validateSorting();
+    return this.queryBus.execute<
+      GetTopUsers,
+      PaginatedViewDto<TopUserViewDto[]>
+    >(new GetTopUsers(query));
   }
 
   @UseGuards(JwtAuthGuard)

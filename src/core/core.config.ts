@@ -55,6 +55,19 @@ export class CoreConfig {
   )
   dbPort: number = Number(this.configService.get('DB_PORT'));
 
+  @IsString({
+    message: 'Set env variable REDIS_HOST to a valid redis host',
+  })
+  redisHost: string = this.configService.get('REDIS_HOST');
+
+  @IsNumber(
+    {},
+    {
+      message: 'Set env variable REDIS_PORT to a port of running redis server',
+    },
+  )
+  redisPort: number = Number(this.configService.get('REDIS_PORT'));
+
   @IsBoolean({
     message:
       'Set env variable IS_SWAGGER_ENABLED to enable/disable swagger, example: true/false',

@@ -15,7 +15,7 @@ export class TopUserViewDto {
       sumScore: Number(dto.sumScore),
       avgScores: Number(dto.avgScores),
       gamesCount: Number(dto.gamesCount),
-      winsCount: Number(dto.gamesCount),
+      winsCount: Number(dto.winsCount),
       lossesCount: Number(dto.lossesCount),
       drawsCount: Number(dto.drawsCount),
       player: {

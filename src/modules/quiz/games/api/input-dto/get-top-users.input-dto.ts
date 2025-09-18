@@ -14,8 +14,8 @@ export enum TopUsersSortBy {
   WinsCount = 'winsCount',
   LossesCount = 'lossesCount',
   DrawsCount = 'drawsCount',
-  Id = 'id',
-  Login = 'login',
+  // Id = 'id',
+  // Login = 'login',
 }
 
 export class GetTopUsersQueryParams {
@@ -36,7 +36,7 @@ export class GetTopUsersQueryParams {
     return res;
   })
   @IsArray()
-  sortBy: { field: TopUsersSortBy; order: SortDirection }[] = [
+  sort: { field: TopUsersSortBy; order: SortDirection }[] = [
     { field: TopUsersSortBy.AvgScores, order: SortDirection.DESC },
     { field: TopUsersSortBy.SumScore, order: SortDirection.DESC },
   ];
@@ -46,7 +46,7 @@ export class GetTopUsersQueryParams {
   }
 
   validateSorting() {
-    this.sortBy.forEach((obj) => {
+    this.sort.forEach((obj) => {
       if (!Object.values(TopUsersSortBy).includes(obj.field)) {
         throw new DomainException({
           code: DomainExceptionCode.ValidationError,

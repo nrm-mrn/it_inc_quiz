@@ -10,6 +10,7 @@ import { UserAccountsModule } from './modules/user-accounts/user-accounts.module
 import { TestingApiModule } from './modules/testing/testingAPI.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { QuizModule } from './modules/quiz/quiz.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -27,6 +28,16 @@ import { QuizModule } from './modules/quiz/quiz.module';
         autoLoadEntities: true,
         synchronize: false,
         logging: false,
+      }),
+      inject: [CoreConfig],
+    }),
+    BullModule.forRootAsync({
+      imports: [CoreModule],
+      useFactory: (coreConfig: CoreConfig) => ({
+        connection: {
+          host: coreConfig.redisHost,
+          port: coreConfig.redisPort,
+        },
       }),
       inject: [CoreConfig],
     }),

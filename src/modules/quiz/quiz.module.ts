@@ -24,6 +24,9 @@ import { GameRepository } from './games/infrastructure/game.repository';
 import { GetUserGamesQueryHandler } from './games/application/queries/get-user-games.query';
 import { GetStatisticsForUserQueryHandler } from './games/application/queries/get-statistics-for-user';
 import { GetTopUsersQueryHandler } from './games/application/queries/get-top-users.query';
+import { BullModule } from '@nestjs/bullmq';
+import { FinishGameProcessor } from './games/application/processors/finish-game-by-timeout.processor';
+import { GamesConfig } from './games/config/games.config';
 
 const usecases = [
   CreateQuestionCommandHandler,
@@ -45,9 +48,14 @@ const queries = [
   GetTopUsersQueryHandler,
 ];
 
+const jobConsumers = [FinishGameProcessor];
+
 @Module({
   imports: [
     UserAccountsModule,
+    BullModule.registerQueue({
+      name: 'GamesToFinish',
+    }),
     TypeOrmModule.forFeature([
       Question,
       PlayerAnswer,
@@ -57,6 +65,13 @@ const queries = [
     ]),
   ],
   controllers: [QuestionsController, GameController],
-  providers: [...usecases, ...queries, QuestionsRepository, GameRepository],
+  providers: [
+    ...usecases,
+    ...queries,
+    ...jobConsumers,
+    QuestionsRepository,
+    GameRepository,
+    GamesConfig,
+  ],
 })
 export class QuizModule {}
